@@ -17,7 +17,7 @@ var opts struct {
 	Port           int      `long:"port" short:"p" default:"9090" description:"Port on which to serve."`
 	Region         string   `long:"region" short:"r" env:"AWS_REGION" required:"true" description:"AWS region name"`
 	Profile        string   `long:"profile" short:"f" env:"AWS_PROFILE" default:"" description:"Named AWS profile to be used"`
-	RefreshPeriod  int      `long:"refresh-period" default:"360" description:"Refresh period in seconds"`
+	RefreshPeriod  int      `long:"refresh-period" default:"300" description:"Refresh period in seconds"`
 	IncludeAWSTags []string `long:"include-aws-tag" description:"The aws resource tags to include as labels for returned metrics"`
 }
 
