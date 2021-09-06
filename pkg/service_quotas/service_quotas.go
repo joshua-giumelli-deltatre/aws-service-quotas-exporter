@@ -3,6 +3,7 @@ package servicequotas
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/client"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -112,7 +113,11 @@ func NewServiceQuotas(region, profile string) (QuotasInterface, error) {
 
 	opts := session.Options{}
 	if profile != "" {
-		opts = session.Options{Profile: profile}
+		opts = session.Options{
+			Profile:                 profile,
+			AssumeRoleTokenProvider: stscreds.StdinTokenProvider,
+			SharedConfigState:       session.SharedConfigEnable,
+		}
 	}
 
 	awsSession, err := session.NewSessionWithOptions(opts)
