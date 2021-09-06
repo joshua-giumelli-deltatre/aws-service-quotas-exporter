@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/thought-machine/aws-service-quotas-exporter/pkg/service_quotas/servicequotas"
+	service_quotas "github.com/joshua-giumelli-deltatre/aws-service-quotas-exporter/pkg/service_quotas"
 )
 
 func resourceName(name string) *string {
@@ -13,17 +13,17 @@ func resourceName(name string) *string {
 }
 
 type ServiceQuotasMock struct {
-	quotas []servicequotas.QuotaUsage
+	quotas []service_quotas.QuotaUsage
 	err    error
 }
 
-func (s *ServiceQuotasMock) QuotasAndUsage() ([]servicequotas.QuotaUsage, error) {
+func (s *ServiceQuotasMock) QuotasAndUsage() ([]service_quotas.QuotaUsage, error) {
 	return s.quotas, s.err
 }
 
 func TestUpdateMetrics(t *testing.T) {
 	quotasClient := &ServiceQuotasMock{
-		quotas: []servicequotas.QuotaUsage{
+		quotas: []service_quotas.QuotaUsage{
 			{ResourceName: resourceName("i-asdasd1"), Usage: 5, Quota: 10, Tags: map[string]string{"dummy_tag": "dummy-value"}},
 			{ResourceName: resourceName("i-asdasd2"), Usage: 2, Quota: 3},
 			{ResourceName: resourceName("i-asdasd3"), Usage: 5, Quota: 10},
@@ -53,14 +53,14 @@ func TestUpdateMetrics(t *testing.T) {
 func TestCreateQuotasAndDescriptions(t *testing.T) {
 	region := "eu-west-1"
 
-	firstQ := servicequotas.QuotaUsage{
+	firstQ := service_quotas.QuotaUsage{
 		Name:         "Name1",
 		ResourceName: resourceName("i-asdasd1"),
 		Description:  "desc1",
 		Usage:        5,
 		Quota:        10,
 	}
-	secondQ := servicequotas.QuotaUsage{
+	secondQ := service_quotas.QuotaUsage{
 		Name:         "Name2",
 		ResourceName: resourceName("i-asdasd2"),
 		Description:  "desc2",
@@ -69,7 +69,7 @@ func TestCreateQuotasAndDescriptions(t *testing.T) {
 		Tags:         map[string]string{"dummy_tag": "dummy-value", "dummy_tag2": "dummy-value2"},
 	}
 	quotasClient := &ServiceQuotasMock{
-		quotas: []servicequotas.QuotaUsage{firstQ, secondQ},
+		quotas: []service_quotas.QuotaUsage{firstQ, secondQ},
 	}
 
 	ch := make(chan struct{})
@@ -110,7 +110,7 @@ func TestCreateQuotasAndDescriptions(t *testing.T) {
 
 func TestCreateQuotasAndDescriptionsRefresh(t *testing.T) {
 	quotasClient := &ServiceQuotasMock{
-		quotas: []servicequotas.QuotaUsage{
+		quotas: []service_quotas.QuotaUsage{
 			{ResourceName: resourceName("i-asdasd1"),
 				Usage:       5,
 				Quota:       10,

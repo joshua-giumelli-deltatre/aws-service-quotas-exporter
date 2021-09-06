@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	service_quotas "github.com/joshua-giumelli-deltatre/aws-service-quotas-exporter/pkg/service_quotas"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	logging "github.com/sirupsen/logrus"
-	"github.com/thought-machine/aws-service-quotas-exporter/pkg/service_quotas/servicequotas"
 )
 
 var log = logging.WithFields(logging.Fields{})
@@ -21,7 +21,7 @@ type Metric struct {
 	labelValues []string
 }
 
-func metricKey(quota servicequotas.QuotaUsage) string {
+func metricKey(quota service_quotas.QuotaUsage) string {
 	return fmt.Sprintf("%s%s", quota.Name, quota.Identifier())
 }
 
@@ -29,7 +29,7 @@ func metricKey(quota servicequotas.QuotaUsage) string {
 // exporter
 type ServiceQuotasExporter struct {
 	metricsRegion   string
-	quotasClient    servicequotas.QuotasInterface
+	quotasClient    service_quotas.QuotasInterface
 	metrics         map[string]Metric
 	refreshPeriod   int
 	waitForMetrics  chan struct{}
@@ -38,7 +38,7 @@ type ServiceQuotasExporter struct {
 
 // NewServiceQuotasExporter creates a new ServiceQuotasExporter
 func NewServiceQuotasExporter(region, profile string, refreshPeriod int, includedAWSTags []string) (*ServiceQuotasExporter, error) {
-	quotasClient, err := servicequotas.NewServiceQuotas(region, profile)
+	quotasClient, err := service_quotas.NewServiceQuotas(region, profile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%w")
 	}
@@ -81,7 +81,7 @@ func (e *ServiceQuotasExporter) createOrUpdateQuotasAndDescriptions(update bool)
 		labelValues := []string{resourceID}
 
 		for _, tag := range e.includedAWSTags {
-			prometheusFormatTag := servicequotas.ToPrometheusNamingFormat(tag)
+			prometheusFormatTag := service_quotas.ToPrometheusNamingFormat(tag)
 			labels = append(labels, prometheusFormatTag)
 			// Need to set empty label value to keep label name and value count the same
 			labelValues = append(labelValues, quota.Tags[prometheusFormatTag])
