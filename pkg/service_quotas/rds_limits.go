@@ -1,8 +1,6 @@
 package servicequotas
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/service/rds"
 	"github.com/aws/aws-sdk-go/service/rds/rdsiface"
 	"github.com/pkg/errors"
@@ -20,8 +18,6 @@ type ReadReplicasPerMasterCheck struct {
 func (c *ReadReplicasPerMasterCheck) Usage() ([]QuotaUsage, error) {
 	quotaUsages := []QuotaUsage{}
 
-	fmt.Println("I am checking RDS usage")
-
 	params := &rds.DescribeDBClustersInput{}
 	err := c.client.DescribeDBClustersPages(params,
 		func(page *rds.DescribeDBClustersOutput, lastPage bool) bool {
@@ -29,16 +25,11 @@ func (c *ReadReplicasPerMasterCheck) Usage() ([]QuotaUsage, error) {
 				for _, group := range page.DBClusters {
 					var readReplicas int
 
-					for replica := range group.ReadReplicaIdentifiers {
-						fmt.Println(replica)
-					}
-
 					for _, clusterMember := range group.DBClusterMembers {
 						if !*clusterMember.IsClusterWriter {
 							readReplicas++
 						}
 					}
-					fmt.Println("Number of read replicas: " + fmt.Sprint(readReplicas))
 
 					usage := QuotaUsage{
 						Name:         numReadReplicasPerMasterName,
