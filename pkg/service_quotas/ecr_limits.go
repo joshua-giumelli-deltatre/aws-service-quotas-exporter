@@ -1,0 +1,54 @@
+package servicequotas
+
+import (
+	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
+	"github.com/aws/aws-sdk-go/service/servicequotas/servicequotasiface"
+	"github.com/pkg/errors"
+)
+
+const (
+	repositoriesPerRegionName        = "repositories_per_region"
+	repositoriesPerRegionDescription = "repositories per region"
+)
+
+type RepositoriesPerRegionCheck struct {
+	client ecriface.ECRAPI
+}
+
+type RepositoriesPerRegionDefaultCheck struct {
+	client servicequotasiface.ServiceQuotasAPI
+}
+
+func (c *RepositoriesPerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	// serviceCode := "ecr"
+	// quotaCode := "L-CFEB8E8D"
+
+	// quotaDefault := getQuotaDefault(serviceCode, quotaCode)
+
+	var repositoryCount int
+
+	params := &ecr.DescribeRepositoriesInput{}
+	err := c.client.DescribeRepositoriesPages(params,
+		func(page *ecr.DescribeRepositoriesOutput, lastPage bool) bool {
+			if page != nil {
+				repositoryCount += len(page.Repositories)
+				usage := QuotaUsage{
+					Name:        repositoriesPerRegionName,
+					Description: repositoriesPerRegionDescription,
+					Usage:       float64(repositoryCount),
+					Quota:       float64(10000), // TODO: Get the service defaults from the GetAWSDefaultServiceQuota API
+				}
+
+				quotaUsages = append(quotaUsages, usage)
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	return quotaUsages, nil
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/rds"
 	awsservicequotas "github.com/aws/aws-sdk-go/service/servicequotas"
 	"github.com/aws/aws-sdk-go/service/servicequotas/servicequotasiface"
@@ -24,7 +25,7 @@ var (
 )
 
 func allServices() []string {
-	return []string{"ec2", "vpc", "rds"}
+	return []string{"ec2", "vpc", "rds", "ecr", "ecs"}
 }
 
 // UsageCheck is an interface for retrieving service quota usage
@@ -38,6 +39,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	ec2Client := ec2.New(c, cfgs...)
 	autoscalingClient := autoscaling.New(c, cfgs...)
 	rdsClient := rds.New(c, cfgs...)
+	ecrClient := ecr.New(c, cfgs...)
 
 	serviceQuotasUsageChecks := map[string]UsageCheck{
 		"L-0EA8095F": &RulesPerSecurityGroupUsageCheck{ec2Client},
@@ -51,6 +53,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	otherUsageChecks := []UsageCheck{
 		&AvailableIpsPerSubnetUsageCheck{ec2Client},
 		&ASGUsageCheck{autoscalingClient},
+		&RepositoriesPerRegionCheck{ecrClient},
 	}
 
 	return serviceQuotasUsageChecks, otherUsageChecks
@@ -165,7 +168,7 @@ func (s *ServiceQuotas) quotasForService(service string) ([]QuotaUsage, error) {
 		func(page *awsservicequotas.ListServiceQuotasOutput, lastPage bool) bool {
 			if page != nil {
 				for _, quota := range page.Quotas {
-					if check, ok := s.serviceQuotasUsageChecks[*quota.QuotaCode]; ok {
+					if check, ok := s.serviceQuotasUsageChecks[*quota.QuotaCode]; ok { // this only gets the non default quotas
 						quotaUsages, err := check.Usage()
 						if err != nil {
 							usageErr = err
