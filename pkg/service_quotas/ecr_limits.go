@@ -3,7 +3,6 @@ package servicequotas
 import (
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
-	"github.com/aws/aws-sdk-go/service/servicequotas/servicequotasiface"
 	"github.com/pkg/errors"
 )
 
@@ -14,10 +13,6 @@ const (
 
 type RepositoriesPerRegionCheck struct {
 	client ecriface.ECRAPI
-}
-
-type RepositoriesPerRegionDefaultCheck struct {
-	client servicequotasiface.ServiceQuotasAPI
 }
 
 func (c *RepositoriesPerRegionCheck) Usage() ([]QuotaUsage, error) {
