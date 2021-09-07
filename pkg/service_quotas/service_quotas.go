@@ -34,7 +34,7 @@ type UsageCheck interface {
 	Usage() ([]QuotaUsage, error)
 }
 
-func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]UsageCheck, []UsageCheck) {
+func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]UsageCheck, map[string]UsageCheck, []UsageCheck) {
 	// all clients that will be used by the usage checks
 	ec2Client := ec2.New(c, cfgs...)
 	autoscalingClient := autoscaling.New(c, cfgs...)
@@ -50,13 +50,16 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-5BC124EF": &ReadReplicasPerMasterCheck{rdsClient},
 	}
 
+	serviceDefaultUsageChecks := map[string]UsageCheck{
+		"L-CFEB8E8D": &RepositoriesPerRegionCheck{ecrClient},
+	}
+
 	otherUsageChecks := []UsageCheck{
 		&AvailableIpsPerSubnetUsageCheck{ec2Client},
 		&ASGUsageCheck{autoscalingClient},
-		&RepositoriesPerRegionCheck{ecrClient},
 	}
 
-	return serviceQuotasUsageChecks, otherUsageChecks
+	return serviceQuotasUsageChecks, serviceDefaultUsageChecks, otherUsageChecks
 }
 
 // QuotaUsage represents service quota usage
@@ -94,12 +97,13 @@ func (q QuotaUsage) Identifier() string {
 // ServiceQuotas is an implementation for retrieving service quotas
 // and their limits
 type ServiceQuotas struct {
-	session                  *session.Session
-	region                   string
-	isAwsChina               bool
-	quotasService            servicequotasiface.ServiceQuotasAPI
-	serviceQuotasUsageChecks map[string]UsageCheck
-	otherUsageChecks         []UsageCheck
+	session                   *session.Session
+	region                    string
+	isAwsChina                bool
+	quotasService             servicequotasiface.ServiceQuotasAPI
+	serviceQuotasUsageChecks  map[string]UsageCheck
+	serviceDefaultUsageChecks map[string]UsageCheck
+	otherUsageChecks          []UsageCheck
 }
 
 // QuotasInterface is an interface for retrieving AWS service
@@ -132,19 +136,20 @@ func NewServiceQuotas(region, profile string) (QuotasInterface, error) {
 	}
 
 	quotasService := awsservicequotas.New(awsSession, aws.NewConfig().WithRegion(region))
-	serviceQuotasChecks, otherChecks := newUsageChecks(awsSession, aws.NewConfig().WithRegion(region))
+	serviceQuotasChecks, serviceDefaultUsageChecks, otherChecks := newUsageChecks(awsSession, aws.NewConfig().WithRegion(region))
 
 	if isChina {
 		logging.Warn("AWS china currently doesn't support service quotas, disabling...")
 	}
 
 	quotas := &ServiceQuotas{
-		session:                  awsSession,
-		region:                   region,
-		quotasService:            quotasService,
-		serviceQuotasUsageChecks: serviceQuotasChecks,
-		isAwsChina:               isChina,
-		otherUsageChecks:         otherChecks,
+		session:                   awsSession,
+		region:                    region,
+		quotasService:             quotasService,
+		serviceQuotasUsageChecks:  serviceQuotasChecks,
+		serviceDefaultUsageChecks: serviceDefaultUsageChecks,
+		isAwsChina:                isChina,
+		otherUsageChecks:          otherChecks,
 	}
 	return quotas, nil
 }
@@ -157,6 +162,41 @@ func isValidRegion(region string) (bool, bool) {
 		}
 	}
 	return false, false
+}
+
+func (s *ServiceQuotas) defaultsForService(service string) ([]QuotaUsage, error) {
+	defaultQuotaUsages := []QuotaUsage{}
+	var defaultUsageErr error
+
+	params := &awsservicequotas.ListAWSDefaultServiceQuotasInput{ServiceCode: aws.String(service)}
+	err := s.quotasService.ListAWSDefaultServiceQuotasPages(params,
+		func(page *awsservicequotas.ListAWSDefaultServiceQuotasOutput, lastPage bool) bool {
+			if page != nil {
+				for _, quota := range page.Quotas {
+					if check, ok := s.serviceDefaultUsageChecks[*quota.QuotaCode]; ok {
+						defaultUsages, err := check.Usage()
+						if err != nil {
+							defaultUsageErr = err
+							return true
+						}
+						for _, defaultUsage := range defaultUsages {
+							defaultUsage.Quota = *quota.Value
+							defaultQuotaUsages = append(defaultQuotaUsages, defaultUsage)
+						}
+					}
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToListQuotas, "%w", err)
+	}
+
+	if defaultUsageErr != nil {
+		return nil, defaultUsageErr
+	}
+	return defaultQuotaUsages, nil
 }
 
 func (s *ServiceQuotas) quotasForService(service string) ([]QuotaUsage, error) {
@@ -209,6 +249,16 @@ func (s *ServiceQuotas) QuotasAndUsage() ([]QuotaUsage, error) {
 			}
 
 			for _, quota := range serviceQuotas {
+				allQuotaUsages = append(allQuotaUsages, quota)
+			}
+		}
+		for _, service := range allServices() {
+			defaultQuotas, err := s.defaultsForService(service)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, quota := range defaultQuotas {
 				allQuotaUsages = append(allQuotaUsages, quota)
 			}
 		}

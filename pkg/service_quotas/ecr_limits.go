@@ -23,11 +23,6 @@ type RepositoriesPerRegionDefaultCheck struct {
 func (c *RepositoriesPerRegionCheck) Usage() ([]QuotaUsage, error) {
 	quotaUsages := []QuotaUsage{}
 
-	// serviceCode := "ecr"
-	// quotaCode := "L-CFEB8E8D"
-
-	// quotaDefault := getQuotaDefault(serviceCode, quotaCode)
-
 	var repositoryCount int
 
 	params := &ecr.DescribeRepositoriesInput{}
@@ -39,7 +34,6 @@ func (c *RepositoriesPerRegionCheck) Usage() ([]QuotaUsage, error) {
 					Name:        repositoriesPerRegionName,
 					Description: repositoriesPerRegionDescription,
 					Usage:       float64(repositoryCount),
-					Quota:       float64(10000), // TODO: Get the service defaults from the GetAWSDefaultServiceQuota API
 				}
 
 				quotaUsages = append(quotaUsages, usage)
