@@ -52,6 +52,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 
 	serviceDefaultUsageChecks := map[string]UsageCheck{
 		"L-CFEB8E8D": &RepositoriesPerRegionCheck{ecrClient},
+		"L-03A36CE1": &ImagesPerRepositoryCheck{ecrClient},
 	}
 
 	otherUsageChecks := []UsageCheck{
