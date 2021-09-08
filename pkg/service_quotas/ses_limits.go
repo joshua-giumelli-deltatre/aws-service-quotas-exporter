@@ -1,8 +1,6 @@
 package servicequotas
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/service/sesv2"
 	"github.com/aws/aws-sdk-go/service/sesv2/sesv2iface"
 	"github.com/pkg/errors"
@@ -19,8 +17,6 @@ type MaxSendIn24HoursCheck struct {
 
 func (c *MaxSendIn24HoursCheck) Usage() ([]QuotaUsage, error) {
 	quotaUsages := []QuotaUsage{}
-
-	fmt.Println("we are checking SES quotas")
 
 	params := &sesv2.GetAccountInput{}
 	response, err := c.client.GetAccount(params)

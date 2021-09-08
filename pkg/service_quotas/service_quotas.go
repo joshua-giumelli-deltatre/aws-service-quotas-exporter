@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
+	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/rds"
@@ -26,7 +27,7 @@ var (
 )
 
 func allServices() []string {
-	return []string{"ec2", "vpc", "rds", "ecr", "ecs"}
+	return []string{"ec2", "vpc", "rds", "ecr", "ecs", "logs"}
 }
 
 // UsageCheck is an interface for retrieving service quota usage
@@ -42,6 +43,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	rdsClient := rds.New(c, cfgs...)
 	ecrClient := ecr.New(c, cfgs...)
 	sesv2Client := sesv2.New(c, cfgs...)
+	logsClient := cloudwatchlogs.New(c, cfgs...)
 
 	serviceQuotasUsageChecks := map[string]UsageCheck{
 		"L-0EA8095F": &RulesPerSecurityGroupUsageCheck{ec2Client},
@@ -51,6 +53,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-1216C47A": &RunningOnDemandStandardInstancesUsageCheck{ec2Client},
 		"L-5BC124EF": &ReadReplicasPerMasterCheck{rdsClient},
 		"L-DF5E4CA3": &ENIsPerRegionCheck{ec2Client},
+		"L-C7B9AAAB": &LogGroupsPerRegionCheck{logsClient},
 	}
 
 	serviceDefaultUsageChecks := map[string]UsageCheck{
