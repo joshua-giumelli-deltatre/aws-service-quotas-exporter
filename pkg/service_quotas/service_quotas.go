@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/kinesisanalyticsv2"
 	"github.com/aws/aws-sdk-go/service/rds"
 	awsservicequotas "github.com/aws/aws-sdk-go/service/servicequotas"
 	"github.com/aws/aws-sdk-go/service/servicequotas/servicequotasiface"
@@ -27,7 +28,7 @@ var (
 )
 
 func allServices() []string {
-	return []string{"ec2", "vpc", "rds", "ecr", "ecs", "logs"}
+	return []string{"ec2", "vpc", "rds", "ecr", "ecs", "logs", "kinesisanalytics"}
 }
 
 // UsageCheck is an interface for retrieving service quota usage
@@ -37,6 +38,7 @@ type UsageCheck interface {
 }
 
 func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]UsageCheck, map[string]UsageCheck, []UsageCheck) {
+
 	// all clients that will be used by the usage checks
 	ec2Client := ec2.New(c, cfgs...)
 	autoscalingClient := autoscaling.New(c, cfgs...)
@@ -44,6 +46,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	ecrClient := ecr.New(c, cfgs...)
 	sesv2Client := sesv2.New(c, cfgs...)
 	logsClient := cloudwatchlogs.New(c, cfgs...)
+	kdaClient := kinesisanalyticsv2.New(c, cfgs...)
 
 	serviceQuotasUsageChecks := map[string]UsageCheck{
 		"L-0EA8095F": &RulesPerSecurityGroupUsageCheck{ec2Client},
@@ -59,6 +62,8 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	serviceDefaultUsageChecks := map[string]UsageCheck{
 		"L-CFEB8E8D": &RepositoriesPerRegionCheck{ecrClient},
 		"L-03A36CE1": &ImagesPerRepositoryCheck{ecrClient},
+		"L-3A88E041": &AppKPUUsageCheck{kdaClient},
+		"L-3729A2EF": &AppsPerRegionCheck{kdaClient},
 		// "L-7ADDB58A": &MaxTotalStorageCheck{rdsClient}, Need to review this check
 	}
 
