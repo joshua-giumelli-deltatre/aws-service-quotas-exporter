@@ -19,6 +19,9 @@ const (
 	outboundRulesPerSecGrpName = "outbound_rules_per_security_group"
 	outboundRulesPerSecGrpDesc = "outbound rules per security group"
 
+	eNIsPerRegionName        = "enis_per_region"
+	eNIsPerRegionDescription = "ENIs per region"
+
 	secGroupsPerENIName = "security_groups_per_network_interface"
 	secGroupsPerENIDesc = "security groups per network interface"
 
@@ -366,4 +369,35 @@ func ec2TagsToQuotaUsageTags(tags []*ec2.Tag) map[string]string {
 	}
 
 	return out
+}
+
+type ENIsPerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *ENIsPerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalENIsCount int
+
+	params := &ec2.DescribeNetworkInterfacesInput{}
+	err := c.client.DescribeNetworkInterfacesPages(params,
+		func(page *ec2.DescribeNetworkInterfacesOutput, lastPage bool) bool {
+			if page != nil {
+				pageENICount := len(page.NetworkInterfaces)
+				totalENIsCount += pageENICount
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        eNIsPerRegionName,
+		Description: eNIsPerRegionDescription,
+		Usage:       float64(totalENIsCount),
+	}
+	quotaUsages = append(quotaUsages, usage)
+	return quotaUsages, nil
 }

@@ -50,6 +50,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-34B43A08": &StandardSpotInstanceRequestsUsageCheck{ec2Client},
 		"L-1216C47A": &RunningOnDemandStandardInstancesUsageCheck{ec2Client},
 		"L-5BC124EF": &ReadReplicasPerMasterCheck{rdsClient},
+		"L-DF5E4CA3": &ENIsPerRegionCheck{ec2Client},
 	}
 
 	serviceDefaultUsageChecks := map[string]UsageCheck{
