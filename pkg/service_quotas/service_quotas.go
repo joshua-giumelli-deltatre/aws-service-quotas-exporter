@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/rds"
 	awsservicequotas "github.com/aws/aws-sdk-go/service/servicequotas"
 	"github.com/aws/aws-sdk-go/service/servicequotas/servicequotasiface"
+	"github.com/aws/aws-sdk-go/service/sesv2"
 	"github.com/pkg/errors"
 	logging "github.com/sirupsen/logrus"
 )
@@ -40,6 +41,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	autoscalingClient := autoscaling.New(c, cfgs...)
 	rdsClient := rds.New(c, cfgs...)
 	ecrClient := ecr.New(c, cfgs...)
+	sesv2Client := sesv2.New(c, cfgs...)
 
 	serviceQuotasUsageChecks := map[string]UsageCheck{
 		"L-0EA8095F": &RulesPerSecurityGroupUsageCheck{ec2Client},
@@ -53,11 +55,13 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	serviceDefaultUsageChecks := map[string]UsageCheck{
 		"L-CFEB8E8D": &RepositoriesPerRegionCheck{ecrClient},
 		"L-03A36CE1": &ImagesPerRepositoryCheck{ecrClient},
+		// "L-7ADDB58A": &MaxTotalStorageCheck{rdsClient}, Need to review this check
 	}
 
 	otherUsageChecks := []UsageCheck{
 		&AvailableIpsPerSubnetUsageCheck{ec2Client},
 		&ASGUsageCheck{autoscalingClient},
+		&MaxSendIn24HoursCheck{sesv2Client},
 	}
 
 	return serviceQuotasUsageChecks, serviceDefaultUsageChecks, otherUsageChecks

@@ -9,9 +9,16 @@ import (
 const (
 	numReadReplicasPerMasterName        = "read_replicas_per_master"
 	numReadReplicasPerMasterDescription = "read replicas per master"
+
+	MaxTotalStorageCheckName        = "max_total_storage"
+	MaxTotalStorageCheckDescription = "max total storage"
 )
 
 type ReadReplicasPerMasterCheck struct {
+	client rdsiface.RDSAPI
+}
+
+type MaxTotalStorageCheck struct {
 	client rdsiface.RDSAPI
 }
 
@@ -50,4 +57,35 @@ func (c *ReadReplicasPerMasterCheck) Usage() ([]QuotaUsage, error) {
 	}
 
 	return quotaUsages, nil
+}
+
+func (c *MaxTotalStorageCheck) Usage() ([]QuotaUsage, error) {
+	quotasUsage := []QuotaUsage{}
+
+	var totalStorageCount int64
+
+	params := &rds.DescribeDBInstancesInput{}
+	err := c.client.DescribeDBInstancesPages(params,
+		func(page *rds.DescribeDBInstancesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, instance := range page.DBInstances {
+					totalStorageCount += int64(*instance.AllocatedStorage)
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+
+	usage := QuotaUsage{
+		Name:        MaxTotalStorageCheckName,
+		Description: MaxTotalStorageCheckDescription,
+		Usage:       float64(totalStorageCount),
+	}
+
+	quotasUsage = append(quotasUsage, usage)
+
+	return quotasUsage, nil
 }
