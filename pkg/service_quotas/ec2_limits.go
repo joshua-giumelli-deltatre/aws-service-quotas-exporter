@@ -60,6 +60,12 @@ const (
 
 	ebsSnapshotsPerRegionName        = "ebs_snapshots_per_region"
 	ebsSnapshotsPerRegionDescription = "EBS snapshots per region"
+
+	maxIo2IopsPerRegionName        = "total_io2_iops_per_region"
+	maxIo2IopsPerRegionDescription = "total IO2 IOPS per region"
+
+	maxIo1IopsPerRegionName        = "total_io1_iops_per_region"
+	maxIo1IopsPerRegionDescription = "total IO1 IOPS per region"
 )
 
 // RulesPerSecurityGroupUsageCheck implements the UsageCheck interface
@@ -710,6 +716,88 @@ func (c *EbsSnapshotsPerRegionCheck) Usage() ([]QuotaUsage, error) {
 	}
 	quotaUsages = append(quotaUsages, usage)
 	return quotaUsages, nil
+}
+
+type MaxIo2IopsPerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxIo2IopsPerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalIopsCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("io2")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalIopsCount += int(*vol.Iops) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxIo2IopsPerRegionName,
+		Description: maxIo2IopsPerRegionDescription,
+		Usage:       float64(totalIopsCount), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
+}
+
+type MaxIo1IopsPerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxIo1IopsPerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalIopsCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("io1")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalIopsCount += int(*vol.Iops) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxIo1IopsPerRegionName,
+		Description: maxIo1IopsPerRegionDescription,
+		Usage:       float64(totalIopsCount), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
 }
 
 type ENIsPerRegionCheck struct {

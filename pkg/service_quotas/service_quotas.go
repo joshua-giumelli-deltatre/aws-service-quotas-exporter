@@ -67,6 +67,8 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-9CF3C2EB": &MaxStandardStoragePerRegionCheck{ec2Client},
 		"L-17AF77E8": &MaxSc1StoragePerRegionCheck{ec2Client},
 		"L-309BACF6": &EbsSnapshotsPerRegionCheck{ec2Client},
+		"L-8D977E7E": &MaxIo2IopsPerRegionCheck{ec2Client},
+		"L-B3A130E6": &MaxIo1IopsPerRegionCheck{ec2Client},
 	}
 
 	serviceDefaultUsageChecks := map[string]UsageCheck{
