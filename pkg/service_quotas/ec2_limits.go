@@ -57,6 +57,9 @@ const (
 
 	maxSc1StoragePerRegionName        = "sc1_storage_per_region"
 	maxSc1StoragePerRegionDescription = "SC1 storage per region"
+
+	ebsSnapshotsPerRegionName        = "ebs_snapshots_per_region"
+	ebsSnapshotsPerRegionDescription = "EBS snapshots per region"
 )
 
 // RulesPerSecurityGroupUsageCheck implements the UsageCheck interface
@@ -677,6 +680,36 @@ func (c *MaxSc1StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
 
 	return quotaUsages, nil
 
+}
+
+type EbsSnapshotsPerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *EbsSnapshotsPerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalSnapshotsCount int
+
+	params := &ec2.DescribeSnapshotsInput{}
+	err := c.client.DescribeSnapshotsPages(params,
+		func(page *ec2.DescribeSnapshotsOutput, lastPage bool) bool {
+			if page != nil {
+				totalSnapshotsCount += len(page.Snapshots)
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        ebsSnapshotsPerRegionName,
+		Description: ebsSnapshotsPerRegionDescription,
+		Usage:       float64(totalSnapshotsCount),
+	}
+	quotaUsages = append(quotaUsages, usage)
+	return quotaUsages, nil
 }
 
 type ENIsPerRegionCheck struct {
