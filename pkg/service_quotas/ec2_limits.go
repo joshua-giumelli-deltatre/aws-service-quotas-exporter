@@ -42,6 +42,15 @@ const (
 
 	maxGp2StoragePerRegionName        = "gp2_storage_per_region"
 	maxGp2StoragePerRegionDescription = "GP2 storage per region"
+
+	maxIo1StoragePerRegionName        = "io1_storage_per_region"
+	maxIo1StoragePerRegionDescription = "IO1 storage per region"
+
+	maxIo2StoragePerRegionName        = "io2_storage_per_region"
+	maxIo2StoragePerRegionDescription = "IO2 storage per region"
+
+	maxSt1StoragePerRegionName        = "st1_storage_per_region"
+	maxSt1StoragePerRegionDescription = "ST1 storage per region"
 )
 
 // RulesPerSecurityGroupUsageCheck implements the UsageCheck interface
@@ -418,6 +427,88 @@ func (c *MaxGP2StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
 
 }
 
+type MaxIo1StoragePerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxIo1StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalStorageCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("io1")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalStorageCount += int(*vol.Size) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxIo1StoragePerRegionName,
+		Description: maxIo1StoragePerRegionDescription,
+		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
+}
+
+type MaxIo2StoragePerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxIo2StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalStorageCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("io2")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalStorageCount += int(*vol.Size) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxIo2StoragePerRegionName,
+		Description: maxIo2StoragePerRegionDescription,
+		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
+}
+
 type MaxGP3StoragePerRegionCheck struct {
 	client ec2iface.EC2API
 }
@@ -451,6 +542,47 @@ func (c *MaxGP3StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
 	usage := QuotaUsage{
 		Name:        maxGp3StoragePerRegionName,
 		Description: maxGp3StoragePerRegionDescription,
+		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
+}
+
+type MaxSt1StoragePerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxSt1StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalStorageCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("st1")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalStorageCount += int(*vol.Size) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxSt1StoragePerRegionName,
+		Description: maxSt1StoragePerRegionDescription,
 		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
 	}
 	quotaUsages = append(quotaUsages, usage)
