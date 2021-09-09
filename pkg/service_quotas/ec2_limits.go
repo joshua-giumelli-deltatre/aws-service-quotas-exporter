@@ -51,6 +51,12 @@ const (
 
 	maxSt1StoragePerRegionName        = "st1_storage_per_region"
 	maxSt1StoragePerRegionDescription = "ST1 storage per region"
+
+	maxStandardStoragePerRegionName        = "standard_storage_per_region"
+	maxStandardStoragePerRegionDescription = "standard storage per region"
+
+	maxSc1StoragePerRegionName        = "sc1_storage_per_region"
+	maxSc1StoragePerRegionDescription = "SC1 storage per region"
 )
 
 // RulesPerSecurityGroupUsageCheck implements the UsageCheck interface
@@ -583,6 +589,88 @@ func (c *MaxSt1StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
 	usage := QuotaUsage{
 		Name:        maxSt1StoragePerRegionName,
 		Description: maxSt1StoragePerRegionDescription,
+		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
+}
+
+type MaxStandardStoragePerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxStandardStoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalStorageCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("standard")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalStorageCount += int(*vol.Size) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxStandardStoragePerRegionName,
+		Description: maxStandardStoragePerRegionDescription,
+		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
+}
+
+type MaxSc1StoragePerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxSc1StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalStorageCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("sc1")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalStorageCount += int(*vol.Size) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxSc1StoragePerRegionName,
+		Description: maxSc1StoragePerRegionDescription,
 		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
 	}
 	quotaUsages = append(quotaUsages, usage)
