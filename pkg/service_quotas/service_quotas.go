@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/kinesisanalyticsv2"
 	"github.com/aws/aws-sdk-go/service/rds"
+	"github.com/aws/aws-sdk-go/service/redshift"
 	awsservicequotas "github.com/aws/aws-sdk-go/service/servicequotas"
 	"github.com/aws/aws-sdk-go/service/servicequotas/servicequotasiface"
 	"github.com/aws/aws-sdk-go/service/sesv2"
@@ -28,7 +29,7 @@ var (
 )
 
 func allServices() []string {
-	return []string{"ec2", "vpc", "rds", "ecr", "ecs", "logs", "kinesisanalytics"}
+	return []string{"ec2", "vpc", "rds", "ecr", "ecs", "logs", "kinesisanalytics", "redshift", "ebs"}
 }
 
 // UsageCheck is an interface for retrieving service quota usage
@@ -47,6 +48,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	sesv2Client := sesv2.New(c, cfgs...)
 	logsClient := cloudwatchlogs.New(c, cfgs...)
 	kdaClient := kinesisanalyticsv2.New(c, cfgs...)
+	rsClient := redshift.New(c, cfgs...)
 
 	serviceQuotasUsageChecks := map[string]UsageCheck{
 		"L-0EA8095F": &RulesPerSecurityGroupUsageCheck{ec2Client},
@@ -57,6 +59,8 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-5BC124EF": &ReadReplicasPerMasterCheck{rdsClient},
 		"L-DF5E4CA3": &ENIsPerRegionCheck{ec2Client},
 		"L-C7B9AAAB": &LogGroupsPerRegionCheck{logsClient},
+		"L-7A658B76": &MaxGP3StoragePerRegionCheck{ec2Client},
+		"L-D18FCD1D": &MaxGP2StoragePerRegionCheck{ec2Client},
 	}
 
 	serviceDefaultUsageChecks := map[string]UsageCheck{
@@ -64,6 +68,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-03A36CE1": &ImagesPerRepositoryCheck{ecrClient},
 		"L-3A88E041": &AppKPUUsageCheck{kdaClient},
 		"L-3729A2EF": &AppsPerRegionCheck{kdaClient},
+		"L-2E428669": &UserSnapshotsPerRegionCheck{rsClient},
 		// "L-7ADDB58A": &MaxTotalStorageCheck{rdsClient}, Need to review this check
 	}
 

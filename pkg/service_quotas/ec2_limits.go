@@ -36,6 +36,12 @@ const (
 
 	availableIPsPerSubnetName = "available_ips_per_subnet"
 	availableIPsPerSubnetDesc = "available IPs per subnet"
+
+	maxGp3StoragePerRegionName        = "gp3_storage_per_region"
+	maxGp3StoragePerRegionDescription = "GP3 storage per region"
+
+	maxGp2StoragePerRegionName        = "gp2_storage_per_region"
+	maxGp2StoragePerRegionDescription = "GP2 storage per region"
 )
 
 // RulesPerSecurityGroupUsageCheck implements the UsageCheck interface
@@ -369,6 +375,88 @@ func ec2TagsToQuotaUsageTags(tags []*ec2.Tag) map[string]string {
 	}
 
 	return out
+}
+
+type MaxGP2StoragePerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxGP2StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalStorageCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("gp2")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalStorageCount += int(*vol.Size) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxGp2StoragePerRegionName,
+		Description: maxGp2StoragePerRegionDescription,
+		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
+}
+
+type MaxGP3StoragePerRegionCheck struct {
+	client ec2iface.EC2API
+}
+
+func (c *MaxGP3StoragePerRegionCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var totalStorageCount int
+
+	params := &ec2.DescribeVolumesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("volume-type"),
+				Values: []*string{aws.String("gp3")},
+			},
+		},
+	}
+	err := c.client.DescribeVolumesPages(params,
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			if page != nil {
+				for _, vol := range page.Volumes {
+					totalStorageCount += int(*vol.Size) // Size is in GiB
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        maxGp3StoragePerRegionName,
+		Description: maxGp3StoragePerRegionDescription,
+		Usage:       float64(totalStorageCount / 1024), // The limit is in TiB
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
 }
 
 type ENIsPerRegionCheck struct {
