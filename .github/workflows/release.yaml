@@ -14,6 +14,8 @@ jobs:
       - name: Setup Node.js for semvar
         uses: actions/setup-node@v2.1.4
       - uses: actions/checkout@v2
+      - name: Unshallow
+        run: git fetch --prune --unshallow
       - uses: actions/setup-go@v2
       - name: Run semantic-release
         run: npx -p @semantic-release/changelog -p semantic-release@17.3.0 -p @semantic-release/git semantic-release
