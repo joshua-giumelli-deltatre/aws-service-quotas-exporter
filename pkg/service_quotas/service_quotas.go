@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/glue"
 	"github.com/aws/aws-sdk-go/service/kinesisanalyticsv2"
 	"github.com/aws/aws-sdk-go/service/rds"
 	"github.com/aws/aws-sdk-go/service/redshift"
@@ -29,7 +30,7 @@ var (
 )
 
 func allServices() []string {
-	return []string{"ec2", "vpc", "rds", "ecr", "ecs", "logs", "kinesisanalytics", "redshift", "ebs"}
+	return []string{"ec2", "vpc", "rds", "ecr", "ecs", "logs", "kinesisanalytics", "redshift", "ebs", "glue"}
 }
 
 // UsageCheck is an interface for retrieving service quota usage
@@ -49,6 +50,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 	logsClient := cloudwatchlogs.New(c, cfgs...)
 	kdaClient := kinesisanalyticsv2.New(c, cfgs...)
 	rsClient := redshift.New(c, cfgs...)
+	glueClient := glue.New(c, cfgs...)
 
 	serviceQuotasUsageChecks := map[string]UsageCheck{
 		"L-0EA8095F": &RulesPerSecurityGroupUsageCheck{ec2Client},
@@ -69,6 +71,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-309BACF6": &EbsSnapshotsPerRegionCheck{ec2Client},
 		"L-8D977E7E": &MaxIo2IopsPerRegionCheck{ec2Client},
 		"L-B3A130E6": &MaxIo1IopsPerRegionCheck{ec2Client},
+		"L-EEC98450": &JobsPerTriggerCheck{glueClient},
 	}
 
 	serviceDefaultUsageChecks := map[string]UsageCheck{
