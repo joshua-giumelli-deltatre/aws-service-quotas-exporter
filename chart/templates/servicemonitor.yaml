@@ -1,0 +1,19 @@
+{{- if .Values.prometheusScraping.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "aws-service-quotas-exporter.fullname" . }}
+  labels:
+  {{- include "aws-service-quotas-exporter.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: aws-service-quotas-exporter
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+  - port: {{ .Values.containers.ports.containerPort | default 80}}
+    path: {{ .Values.containers.readinessProbe.httpGet.path | default "/metrics"}}
+    interval: "{{ .Values.prometheusScraping.scrapeInterval }}"
+{{- end }}
