@@ -134,3 +134,36 @@ func (c *ConcurrentRunsPerJobCheck) Usage() ([]QuotaUsage, error) {
 
 	return quotaUsages, nil
 }
+
+type DPUsCheck struct {
+	client glueiface.GlueAPI
+}
+
+func (c *DPUsCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var dPUsCount int
+
+	params := &glue.GetJobsInput{}
+	err := c.client.GetJobsPages(params,
+		func(page *glue.GetJobsOutput, lastPage bool) bool {
+			if page != nil {
+				for _, job := range page.Jobs {
+					dPUsCount += int(*job.MaxCapacity)
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        dPUsName,
+		Description: dPUsDescription,
+		Usage:       float64(dPUsCount),
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+}
