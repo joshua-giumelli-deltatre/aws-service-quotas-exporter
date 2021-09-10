@@ -73,6 +73,7 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-B3A130E6": &MaxIo1IopsPerRegionCheck{ec2Client},
 		"L-EEC98450": &JobsPerTriggerCheck{glueClient},
 		"L-611FDDE4": &JobsPerAccountCheck{glueClient},
+		"L-F574AED9": &ConcurrentRunsPerJobCheck{glueClient},
 	}
 
 	serviceDefaultUsageChecks := map[string]UsageCheck{

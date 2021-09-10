@@ -103,3 +103,34 @@ func (c *JobsPerAccountCheck) Usage() ([]QuotaUsage, error) {
 
 	return quotaUsages, nil
 }
+
+type ConcurrentRunsPerJobCheck struct {
+	client glueiface.GlueAPI
+}
+
+func (c *ConcurrentRunsPerJobCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	params := &glue.GetJobsInput{}
+	err := c.client.GetJobsPages(params,
+		func(page *glue.GetJobsOutput, lastPage bool) bool {
+			if page != nil {
+				for _, job := range page.Jobs {
+					usage := QuotaUsage{
+						Name:         concurrentRunsPerJobName,
+						Description:  concurrentRunsPerJobDescription,
+						ResourceName: job.Name,
+						Usage:        float64(*job.ExecutionProperty.MaxConcurrentRuns),
+					}
+					quotaUsages = append(quotaUsages, usage)
+				}
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+
+	return quotaUsages, nil
+}
