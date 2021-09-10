@@ -72,3 +72,34 @@ func (c *JobsPerTriggerCheck) Usage() ([]QuotaUsage, error) {
 
 	return quotaUsages, nil
 }
+
+type JobsPerAccountCheck struct {
+	client glueiface.GlueAPI
+}
+
+func (c *JobsPerAccountCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var jobsCount int
+
+	params := &glue.ListJobsInput{}
+	err := c.client.ListJobsPages(params,
+		func(page *glue.ListJobsOutput, lastPage bool) bool {
+			if page != nil {
+				jobsCount += len(page.JobNames)
+			}
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
+	}
+	usage := QuotaUsage{
+		Name:        jobsName,
+		Description: jobsDescription,
+		Usage:       float64(jobsCount),
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+}
