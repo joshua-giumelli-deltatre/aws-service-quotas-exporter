@@ -1,6 +1,7 @@
 package servicequotas
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/glue"
 	"github.com/aws/aws-sdk-go/service/glue/glueiface"
 	"github.com/pkg/errors"
@@ -166,4 +167,53 @@ func (c *DPUsCheck) Usage() ([]QuotaUsage, error) {
 	quotaUsages = append(quotaUsages, usage)
 
 	return quotaUsages, nil
+}
+
+type ConcurrentRunsCheck struct {
+	client glueiface.GlueAPI
+}
+
+func (c *ConcurrentRunsCheck) Usage() ([]QuotaUsage, error) {
+	quotaUsages := []QuotaUsage{}
+
+	var concurrentJobsCount int
+
+	listParams := &glue.ListJobsInput{}
+	listErr := c.client.ListJobsPages(listParams,
+		func(page *glue.ListJobsOutput, lastPage bool) bool {
+			if page != nil {
+				for _, job := range page.JobNames {
+					params := &glue.GetJobRunsInput{JobName: job}
+					err := c.client.GetJobRunsPages(params,
+						func(page *glue.GetJobRunsOutput, lastPage bool) bool {
+							if page != nil {
+								for _, run := range page.JobRuns {
+									if run.JobRunState == aws.String(glue.JobRunStateRunning) {
+										concurrentJobsCount++
+									}
+								}
+							}
+							return !lastPage
+						},
+					)
+					if err != nil {
+						panic(err)
+					}
+				}
+			}
+			return !lastPage
+		},
+	)
+	if listErr != nil {
+		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", listErr)
+	}
+	usage := QuotaUsage{
+		Name:        concurrentRunsName,
+		Description: concurrentRunsDescription,
+		Usage:       float64(concurrentJobsCount),
+	}
+	quotaUsages = append(quotaUsages, usage)
+
+	return quotaUsages, nil
+
 }
