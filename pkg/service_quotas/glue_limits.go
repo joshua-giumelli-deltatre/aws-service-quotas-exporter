@@ -1,7 +1,6 @@
 package servicequotas
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/glue"
 	"github.com/aws/aws-sdk-go/service/glue/glueiface"
 	"github.com/pkg/errors"
@@ -188,7 +187,7 @@ func (c *ConcurrentRunsCheck) Usage() ([]QuotaUsage, error) {
 						func(page *glue.GetJobRunsOutput, lastPage bool) bool {
 							if page != nil {
 								for _, run := range page.JobRuns {
-									if run.JobRunState == aws.String(glue.JobRunStateRunning) {
+									if *run.JobRunState == glue.JobRunStateRunning {
 										concurrentJobsCount++
 									}
 								}
