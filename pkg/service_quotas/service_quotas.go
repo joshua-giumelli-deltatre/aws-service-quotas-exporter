@@ -84,13 +84,13 @@ func newUsageChecks(c client.ConfigProvider, cfgs ...*aws.Config) (map[string]Us
 		"L-3A88E041": &AppKPUUsageCheck{kdaClient},
 		"L-3729A2EF": &AppsPerRegionCheck{kdaClient},
 		"L-2E428669": &UserSnapshotsPerRegionCheck{rsClient},
-		// "L-7ADDB58A": &MaxTotalStorageCheck{rdsClient}, Need to review this check
 	}
 
 	otherUsageChecks := []UsageCheck{
 		&AvailableIpsPerSubnetUsageCheck{ec2Client},
 		&ASGUsageCheck{autoscalingClient},
 		&MaxSendIn24HoursCheck{sesv2Client},
+		// &MaxTotalStorageCheck{rdsClient}, //Need to review this check
 	}
 
 	return serviceQuotasUsageChecks, serviceDefaultUsageChecks, otherUsageChecks

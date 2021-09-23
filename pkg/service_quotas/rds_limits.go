@@ -18,10 +18,6 @@ type ReadReplicasPerMasterCheck struct {
 	client rdsiface.RDSAPI
 }
 
-type MaxTotalStorageCheck struct {
-	client rdsiface.RDSAPI
-}
-
 func (c *ReadReplicasPerMasterCheck) Usage() ([]QuotaUsage, error) {
 	quotaUsages := []QuotaUsage{}
 
@@ -57,6 +53,10 @@ func (c *ReadReplicasPerMasterCheck) Usage() ([]QuotaUsage, error) {
 	}
 
 	return quotaUsages, nil
+}
+
+type MaxTotalStorageCheck struct {
+	client rdsiface.RDSAPI
 }
 
 func (c *MaxTotalStorageCheck) Usage() ([]QuotaUsage, error) {
