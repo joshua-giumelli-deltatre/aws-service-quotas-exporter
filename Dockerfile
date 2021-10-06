@@ -18,4 +18,4 @@ COPY --from=builder /go/bin/exporter /app/exporter
 USER exporter
 WORKDIR /app
 
-ENTRYPOINT ["exporter"]
+ENTRYPOINT ["./exporter"]
