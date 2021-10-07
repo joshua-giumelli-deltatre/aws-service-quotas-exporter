@@ -50,3 +50,4 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_OWNER: "${GITHUB_ACTOR}"
+          CR_SKIP_EXISTING: true
