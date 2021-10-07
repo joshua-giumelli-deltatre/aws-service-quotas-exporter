@@ -19,8 +19,6 @@ containers:
     containerPort: 9090
   livenessProbe:
     enabled: false
-    httpGet:
-      path: /
   readinessProbe:
     httpGet:
       path: /metrics
