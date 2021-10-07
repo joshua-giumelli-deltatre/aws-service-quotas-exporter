@@ -20,8 +20,7 @@ containers:
   livenessProbe:
     enabled: false
   readinessProbe:
-    httpGet:
-      path: /metrics
+    enabled: false
 
 serviceAccount:
   # Specifies whether a service account should be created
