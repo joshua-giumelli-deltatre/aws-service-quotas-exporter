@@ -37,10 +37,12 @@ spec:
             - name: http
               containerPort: {{ .Values.containers.ports.containerPort }}
               protocol: TCP
+          {{- if .Values.containers.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
               path: {{ .Values.containers.livenessProbe.httpGet.path }}
               port: http
+          {{- end }}
           readinessProbe:
             httpGet:
               path: {{ .Values.containers.readinessProbe.httpGet.path }}
