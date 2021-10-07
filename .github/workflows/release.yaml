@@ -45,6 +45,11 @@ jobs:
         with:
           image-name: ghcr.io/${{ github.repository }}:${{ steps.gettag.outputs.tag }}
           severity-threshold: MEDIUM
+      
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.2.1
         env:
