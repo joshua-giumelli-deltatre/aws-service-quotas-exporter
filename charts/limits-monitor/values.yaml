@@ -38,6 +38,8 @@ podSecurityContext: {}
 
 prometheusScraping:
   enabled: false
+  path: "/metrics"
+  interval: 300s
 
 
 securityContext: {}

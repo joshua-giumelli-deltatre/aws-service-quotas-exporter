@@ -7,13 +7,12 @@ metadata:
   {{- include "aws-service-quotas-exporter.labels" . | nindent 4 }}
 spec:
   selector:
-    matchLabels:
-      app: aws-service-quotas-exporter
+    {{- include "aws-service-quotas-exporter.selectorLabels" . | nindent 4 }}
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
   endpoints:
-  - port: {{ .Values.containers.ports.containerPort | default 80}}
-    path: {{ .Values.containers.readinessProbe.httpGet.path | default "/metrics"}}
-    interval: "{{ .Values.prometheusScraping.scrapeInterval }}"
+  - port: {{ .Values.containers.ports.containerPort }}
+    path: {{ .Values.prometheusScraping.path }}
+    interval: {{ .Values.prometheusScraping.interval }}
 {{- end }}
