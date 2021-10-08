@@ -7,7 +7,8 @@ metadata:
   {{- include "aws-service-quotas-exporter.labels" . | nindent 4 }}
 spec:
   selector:
-    {{- include "aws-service-quotas-exporter.selectorLabels" . | nindent 4 }}
+    matchLabels
+    {{- include "aws-service-quotas-exporter.selectorLabels" . | nindent 6 }}
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
