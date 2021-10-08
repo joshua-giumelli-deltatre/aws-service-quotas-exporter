@@ -3,6 +3,16 @@ entries:
   aws-service-quotas-exporter:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-10-08T02:35:02.005355749Z"
+    description: A Helm chart for Kubernetes
+    digest: 34b9cea4699241bce06eef73991753c1b40217c0cc7a5d217007c7ed622d36f8
+    name: aws-service-quotas-exporter
+    type: application
+    urls:
+    - https://github.com/joshua-giumelli-deltatre/aws-service-quotas-exporter/releases/download/aws-service-quotas-exporter-0.5.0/aws-service-quotas-exporter-0.5.0.tgz
+    version: 0.5.0
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-10-07T23:01:03.729183829Z"
     description: A Helm chart for Kubernetes
     digest: fd0079ab50e0289ae2e20c46a0bff3941dfd939d7308364b347800ceb11b5e0b
@@ -41,4 +51,4 @@ entries:
     urls:
     - https://github.com/joshua-giumelli-deltatre/aws-service-quotas-exporter/releases/download/aws-service-quotas-exporter-0.1.0/aws-service-quotas-exporter-0.1.0.tgz
     version: 0.1.0
-generated: "2021-10-07T23:01:03.72920623Z"
+generated: "2021-10-08T02:35:02.00550465Z"
