@@ -13,7 +13,7 @@ spec:
     matchNames:
       - {{ .Release.Namespace }}
   endpoints:
-  - port: {{ .Values.containers.ports.containerPort }}
+  - targetPort: {{ .Values.containers.ports.containerPort }}
     path: {{ .Values.prometheusScraping.path }}
     interval: {{ .Values.prometheusScraping.interval | quote }}
 {{- end }}
