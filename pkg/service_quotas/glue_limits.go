@@ -43,34 +43,40 @@ func (c *JobsPerTriggerCheck) Usage() ([]QuotaUsage, error) {
 		},
 	)
 	if listErr != nil {
+		log.Error("Failed to list Glue triggers")
 		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", listErr)
 	}
-
-	params := &glue.BatchGetTriggersInput{
-		TriggerNames: triggersList,
-	}
-	triggers, err := c.client.BatchGetTriggers(params)
-	if err != nil {
-		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", listErr)
-	}
-	for _, trigger := range triggers.Triggers {
-		var jobsTriggered int
-		for _, action := range trigger.Actions {
-			if *action.JobName != "" {
-				jobsTriggered++
+	// do we actually have any triggers to get?
+	if len(triggersList) > 0 {
+		params := &glue.BatchGetTriggersInput{
+			TriggerNames: triggersList,
+		}
+		triggers, err := c.client.BatchGetTriggers(params)
+		if err != nil {
+			log.Error("Failed to batch get Glue triggers")
+			return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", listErr)
+		}
+		for _, trigger := range triggers.Triggers {
+			var jobsTriggered int
+			for _, action := range trigger.Actions {
+				if *action.JobName != "" {
+					jobsTriggered++
+				}
 			}
-		}
-		usage := QuotaUsage{
-			Name:         jobsPerTriggerName,
-			Description:  jobsPerTriggerDescription,
-			ResourceName: trigger.Name,
-			Usage:        float64(jobsTriggered),
-		}
-		quotaUsages = append(quotaUsages, usage)
+			usage := QuotaUsage{
+				Name:         jobsPerTriggerName,
+				Description:  jobsPerTriggerDescription,
+				ResourceName: trigger.Name,
+				Usage:        float64(jobsTriggered),
+			}
+			quotaUsages = append(quotaUsages, usage)
 
+		}
+
+		return quotaUsages, nil
 	}
-
-	return quotaUsages, nil
+	// if we are here, there are no Glue triggers
+	return nil, nil
 }
 
 type JobsPerAccountCheck struct {

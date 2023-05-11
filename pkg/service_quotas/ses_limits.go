@@ -21,6 +21,7 @@ func (c *MaxSendIn24HoursCheck) Usage() ([]QuotaUsage, error) {
 	params := &sesv2.GetAccountInput{}
 	response, err := c.client.GetAccount(params)
 	if err != nil {
+		log.Error("Failed to get SES Account")
 		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
 	} else {
 		usage := QuotaUsage{

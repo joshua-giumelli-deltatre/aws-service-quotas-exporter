@@ -3,7 +3,11 @@ package servicequotas
 import (
 	"regexp"
 	"strings"
+
+	logging "github.com/sirupsen/logrus"
 )
+
+var log = logging.WithFields(logging.Fields{})
 
 var invalidLabelCharactersRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")

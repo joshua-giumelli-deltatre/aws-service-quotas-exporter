@@ -31,6 +31,7 @@ func (c *UserSnapshotsPerRegionCheck) Usage() ([]QuotaUsage, error) {
 		},
 	)
 	if err != nil {
+		log.Error("Failed to get Redshift Snapshots Usage Check")
 		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
 	}
 	usage := QuotaUsage{

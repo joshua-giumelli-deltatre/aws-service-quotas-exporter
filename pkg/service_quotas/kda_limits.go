@@ -24,6 +24,7 @@ func (c *AppKPUUsageCheck) Usage() ([]QuotaUsage, error) {
 	listParams := &kinesisanalyticsv2.ListApplicationsInput{}
 	apps, err := c.client.ListApplications(listParams)
 	if err != nil {
+		log.Error("Failed to get KPUs Usage")
 		return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
 	}
 	// Go doesn't support while loops, so let's make our own
@@ -35,6 +36,7 @@ func (c *AppKPUUsageCheck) Usage() ([]QuotaUsage, error) {
 			descParams := &kinesisanalyticsv2.DescribeApplicationInput{ApplicationName: app.ApplicationName}
 			response, err := c.client.DescribeApplication(descParams)
 			if err != nil {
+				log.Error("Failed to describe KDA applications")
 				return nil, errors.Wrapf(ErrFailedToGetUsage, "%w", err)
 			} else {
 				usage := QuotaUsage{
